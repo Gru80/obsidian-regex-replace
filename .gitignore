@@ -1,0 +1,14 @@
+# npm
+node_modules
+package-lock.json
+main.js
+
+# vscode
+.vscode
+
+# Intellij
+*.iml
+.idea
+
+# Exclude sourcemaps
+*.map

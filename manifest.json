@@ -1,0 +1,10 @@
+{
+	"author": "Martin Eder",
+	"authorUrl": "https://www.gruware.org",
+	"description": "Find and replace text using regular expressions.",
+	"id": "obsidian-regex-replace",
+	"isDesktopOnly": false,
+	"minAppVersion": "0.13.1",
+	"name": "Regex Find/Replace",
+	"version": "1.0.0"
+}
