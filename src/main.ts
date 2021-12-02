@@ -74,7 +74,6 @@ class FindAndReplaceModal extends Modal {
 		const bcontainerEl = document.createElement(divClass);
 		bcontainerEl.addClass(rowClass);
 
-
 		const submitButtonTarget = document.createElement(divClass);
 		submitButtonTarget.addClass("button-wrapper");
 		submitButtonTarget.addClass(rowClass);
@@ -97,49 +96,52 @@ class FindAndReplaceModal extends Modal {
 		submitButtonComponent.setCta();
 		submitButtonComponent.onClick(() => {
 			let resultString = "";
-			const search = new RegExp(findInputComponent.getValue(),"gm");
-			logger("search string: " + search)
-			//logger("text to process:")
-			//logger(editor.getValue());
 
-			if(!selToggleComponent.getValue()) {
-				logger("Scope: Full document");
-				let rresult = editor.getValue().match(search);
-				if(rresult) {
-					editor.setValue(editor.getValue().replace(search, replaceWithInputComponent.getValue()));
-					resultString = "Made " + rresult.length + " replacement(s)";
-					logger(rresult.toString());
+			// Check if regular expressions should be used
+			if(regToggleComponent.getValue()) {
+				const search = new RegExp(findInputComponent.getValue(),"gm");
+				logger("USING REGEXP");
+				if(!selToggleComponent.getValue()) {
+					logger(" SCOPE: Full document");
+					let rresult = editor.getValue().match(search);
+					if(rresult) {
+						editor.setValue(editor.getValue().replace(search, replaceWithInputComponent.getValue()));
+						resultString = "Made " + rresult.length + " replacement(s)";
+					}
+					else {
+						resultString = "No match in whole document!"
+					}
 				}
 				else {
-					resultString = "No match!"
+					logger(" SCOPE: Selection");
+					let selectedText = editor.getSelection();
+					let rresult = editor.getValue().match(search);
+					if (rresult) {
+						selectedText = selectedText.replace(search, replaceWithInputComponent.getValue());
+						editor.replaceSelection(selectedText);
+						resultString = "Made " + rresult.length + " replacement(s)";
+					}
+					else {
+						resultString = "No match in current selection!";
+					}					
 				}
 			}
 			else {
-				logger("Scope: Selection only");
-				const hitCount = (editor.getSelection().match(search) || []).length;
-				logger("hitCount: " + hitCount);
-				if (hitCount > 0) {
-					const replacementText = editor.getSelection().replace(
-									search,
-									replaceWithInputComponent.getValue())
+				const search = findInputComponent.getValue();
+				const replace = replaceWithInputComponent.getValue();
 
-					const selectionStart = editor.getCursor("from");
-
-					editor.replaceSelection(replacementText);
-
-					// We re-select the selected text (just for nicer user experience)
-					editor.setSelection(
-						selectionStart,
-						editor.offsetToPos(
-							editor.posToOffset(selectionStart) + replacementText.length,
-						),
-					);
-					resultString = "Made " + hitCount + " replacement(s)";
+				logger("NOT using REGEXP");
+				if(!selToggleComponent.getValue()) {
+					logger(" SCOPE: Full document");
+					editor.setValue(editor.getValue().split(search).join(replace));
+					resultString = "Done.";
 				}
 				else {
-					resultString = "No match! Nothing changed.";
+					logger(" SCOPE: Selection");
+					resultString = "Not implemented";
 				}
-			}
+			} 
+			
 			this.close();
 			new Notice(resultString)
 			
@@ -177,11 +179,6 @@ class FindAndReplaceModal extends Modal {
 		// Set default to enable
 		regToggleComponent.setValue(true);
 		
-		// Not implemented right now
-		regToggleComponent.setDisabled(true);
-		selToggleComponent.setDisabled(true);
-
-
 		// Add childs
 		toggleSelContainerEl.appendChild(toggleSelLabel);
 		toggleSelContainerEl.appendChild(toggleSelTarget);
