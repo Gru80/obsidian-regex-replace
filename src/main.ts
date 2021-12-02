@@ -103,12 +103,19 @@ class FindAndReplaceModal extends Modal {
 			//logger(editor.getValue());
 
 			if(!selToggleComponent.getValue()) {
-				logger("Full document");
-
-				editor.setValue(editor.getValue().replace(search, replaceWithInputComponent.getValue()));
+				logger("Scope: Full document");
+				let rresult = editor.getValue().match(search);
+				if(rresult) {
+					editor.setValue(editor.getValue().replace(search, replaceWithInputComponent.getValue()));
+					resultString = "Made " + rresult.length + " replacement(s)";
+					logger(rresult.toString());
+				}
+				else {
+					resultString = "No match!"
+				}
 			}
 			else {
-				logger("Selection only");
+				logger("Scope: Selection only");
 				const hitCount = (editor.getSelection().match(search) || []).length;
 				logger("hitCount: " + hitCount);
 				if (hitCount > 0) {
@@ -127,7 +134,7 @@ class FindAndReplaceModal extends Modal {
 							editor.posToOffset(selectionStart) + replacementText.length,
 						),
 					);
-					resultString = "Made " + hitCount + " replacements";
+					resultString = "Made " + hitCount + " replacement(s)";
 				}
 				else {
 					resultString = "No match! Nothing changed.";
