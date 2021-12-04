@@ -106,7 +106,7 @@ class FindAndReplaceModal extends Modal {
 					let rresult = editor.getValue().match(search);
 					if(rresult) {
 						editor.setValue(editor.getValue().replace(search, replaceWithInputComponent.getValue()));
-						resultString = "Made " + rresult.length + " replacement(s)";
+						resultString = "Made " + rresult.length + " replacement(s) in document";
 					}
 					else {
 						resultString = "No match in whole document!"
@@ -119,7 +119,7 @@ class FindAndReplaceModal extends Modal {
 					if (rresult) {
 						selectedText = selectedText.replace(search, replaceWithInputComponent.getValue());
 						editor.replaceSelection(selectedText);
-						resultString = "Made " + rresult.length + " replacement(s)";
+						resultString = "Made " + rresult.length + " replacement(s) in selection";
 					}
 					else {
 						resultString = "No match in current selection!";
@@ -134,17 +134,16 @@ class FindAndReplaceModal extends Modal {
 				if(!selToggleComponent.getValue()) {
 					logger(" SCOPE: Full document");
 					editor.setValue(editor.getValue().split(search).join(replace));
-					resultString = "Done.";
+					resultString = "Replace in full document finished.";
 				}
 				else {
 					logger(" SCOPE: Selection");
-					resultString = "Not implemented";
+					editor.replaceSelection(editor.getSelection().split(search).join(replace));
+					resultString = "Replace in selection finished.";
 				}
-			} 
-			
+			} 			
 			this.close();
-			new Notice(resultString)
-			
+			new Notice(resultString)			
 		});
 
 		// Build toggle row for enable/disable regular expressions
