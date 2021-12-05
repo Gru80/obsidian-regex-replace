@@ -70,7 +70,7 @@ class FindAndReplaceModal extends Modal {
 	plugin: Plugin;
 
 	onOpen() {
-		let { contentEl, titleEl, editor, modalEl } = this;
+		const { contentEl, titleEl, editor, modalEl } = this;
 
 		modalEl.addClass("find-replace-modal");
 		titleEl.setText("Regex Find/Replace");
@@ -160,7 +160,7 @@ class FindAndReplaceModal extends Modal {
 				logger("USING REGEXP with flags: " + this.settings.regexFlags);
 				if(!selToggleComponent.getValue()) {
 					logger(" SCOPE: Full document");
-					let rresult = editor.getValue().match(search);
+					const rresult = editor.getValue().match(search);
 					if(rresult) {
 						editor.setValue(editor.getValue().replace(search, replace));
 						resultString = "Made " + rresult.length + " replacement(s) in document";
@@ -172,7 +172,7 @@ class FindAndReplaceModal extends Modal {
 				else {
 					logger(" SCOPE: Selection");
 					let selectedText = editor.getSelection();
-					let rresult = editor.getValue().match(search);
+					const rresult = editor.getValue().match(search);
 					if (rresult) {
 						selectedText = selectedText.replace(search, replace);
 						editor.replaceSelection(selectedText);
@@ -223,7 +223,7 @@ class FindAndReplaceModal extends Modal {
 	}
 
 	onClose() {
-		let { contentEl } = this;
+		const { contentEl } = this;
 		contentEl.empty();
 	}
 }
