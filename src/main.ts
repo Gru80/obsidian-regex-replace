@@ -152,29 +152,29 @@ class FindAndReplaceModal extends Modal {
 		submitButtonComponent.setButtonText("Replace All");
 		submitButtonComponent.setCta();
 		submitButtonComponent.onClick(() => {
-			let resultString = "";
+			let resultString = "No match";
 			const replace = replaceWithInputComponent.getValue();
 
 			// Check if regular expressions should be used
 			if(regToggleComponent.getValue()) {
 				logger("USING regex with flags: " + this.settings.regexFlags);
 				const search = new RegExp(findInputComponent.getValue(),this.settings.regexFlags);
-				const rresult = editor.getValue().match(search);
-				if(rresult) {
-					if(!selToggleComponent.getValue()) {
-						logger("   SCOPE: Full document");
+				if(!selToggleComponent.getValue()) {
+					logger("   SCOPE: Full document");
+					const rresult = editor.getValue().match(search);
+					if (rresult) {
 						editor.setValue(editor.getValue().replace(search, replace));
+						resultString = `Made ${rresult.length} replacement(s) in document`;			
 					}
-					else {
-						logger("   SCOPE: Selection");
-						let selectedText = editor.getSelection();
-						selectedText = selectedText.replace(search, replace);
-						editor.replaceSelection(selectedText);	
-					}
-					resultString = `Made ${rresult.length} replacement(s)`;			
 				}
 				else {
-					resultString = "No match!";
+					logger("   SCOPE: Selection");
+					let selectedText = editor.getSelection();
+					const rresult = selectedText.match(search);
+					if (rresult) {
+						editor.replaceSelection(selectedText.replace(search, replace));	
+						resultString = `Made ${rresult.length} replacement(s) in selection`;
+					}
 				}
 			}
 			else {
@@ -183,13 +183,15 @@ class FindAndReplaceModal extends Modal {
 				logger("NOT using regex");
 				if(!selToggleComponent.getValue()) {
 					logger("   SCOPE: Full document");
+					const nrOfHits = editor.getValue().split(search).length - 1;
 					editor.setValue(editor.getValue().split(search).join(replace));
-					resultString = "Replace in full document finished.";
+					resultString = `Made ${nrOfHits} replacement(s) in document`;
 				}
 				else {
 					logger("   SCOPE: Selection");
+					const nrOfHits = editor.getSelection().split(search).length - 1;
 					editor.replaceSelection(editor.getSelection().split(search).join(replace));
-					resultString = "Replace in selection finished.";
+					resultString = `Made ${nrOfHits} replacement(s) in selection`;
 				}
 			} 		
 			
