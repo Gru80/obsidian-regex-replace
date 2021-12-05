@@ -1,4 +1,3 @@
-import { notEqual } from "assert";
 import {
 	App,
 	ButtonComponent,
@@ -14,12 +13,16 @@ interface RfrPluginSettings {
 	findText: string;
 	replaceText: string;
 	regexFlags: string;
+	useRegEx: boolean;
+	selOnly: boolean;
 }
 
 const DEFAULT_SETTINGS: RfrPluginSettings = {
 	findText: '',
 	replaceText: '',
-	regexFlags: 'gm'
+	regexFlags: 'gm',
+	useRegEx: true,
+	selOnly: false
 }
 
 const logger = (logString: string): void => {console.log ("RegexFR: " + logString)};
@@ -96,8 +99,32 @@ class FindAndReplaceModal extends Modal {
 			return component;
 		};
 
+		const addToggleComponent = (label: string, tooltip: string): ToggleComponent => {
+			const ContainerEl = document.createElement(divClass);
+			ContainerEl.addClass(rowClass);
+	
+			const targetEl = document.createElement(divClass);
+			targetEl.addClass(rowClass);
+			const component = new ToggleComponent(targetEl);
+			component.setTooltip(tooltip);
+	
+			const labelEl = document.createElement(divClass);
+			labelEl.addClass("check-label");
+			labelEl.setText(label);
+	
+			ContainerEl.appendChild(labelEl);
+			ContainerEl.appendChild(targetEl);
+
+			contentEl.appendChild(ContainerEl);
+
+			return component;
+		};
+
 		const findInputComponent = addTextComponent('Find:', 'e.g. (.*)');
 		const replaceWithInputComponent = addTextComponent('Replace:', 'e.g. $1');
+
+		const regToggleComponent = addToggleComponent('Use regular expressions', 'Enable/disable use of regular expressions');
+		const selToggleComponent = addToggleComponent('Replace only in selection', 'Replace only in occurances of the currently selected text');
 
 		// Create Button row
 		const bcontainerEl = document.createElement(divClass);
@@ -175,6 +202,8 @@ class FindAndReplaceModal extends Modal {
 			// Saving find and replace text
 			this.settings.findText = findInputComponent.getValue();
 			this.settings.replaceText = replace;
+			this.settings.useRegEx = regToggleComponent.getValue();
+			this.settings.selOnly = selToggleComponent.getValue();
 			this.plugin.saveData(this.settings);
 
 			this.close();
@@ -182,51 +211,15 @@ class FindAndReplaceModal extends Modal {
 					
 		});
 
-		// Build toggle row for enable/disable regular expressions
-		const toggleRegexContainerEl = document.createElement(divClass);
-		toggleRegexContainerEl.addClass(rowClass);
-
-		const toggleRegexTarget = document.createElement(divClass);
-		toggleRegexTarget.addClass(rowClass);
-		const regToggleComponent = new ToggleComponent(toggleRegexTarget);
-		regToggleComponent.setTooltip("Enable/disable use of regular expressions");
-
-		const toggleRegexLabel = document.createElement(divClass);
-		toggleRegexLabel.addClass("check-label");
-		toggleRegexLabel.setText("Use regular expressions");
-
-		toggleRegexContainerEl.appendChild(toggleRegexLabel);
-		toggleRegexContainerEl.appendChild(toggleRegexTarget);
-
-		// Build toggle row for enable/disable replace in selection only
-		const toggleSelContainerEl = document.createElement(divClass);
-		toggleSelContainerEl.addClass(rowClass);
-
-		const toggleSelTarget = document.createElement(divClass);
-		toggleSelTarget.addClass(rowClass);
-		const selToggleComponent = new ToggleComponent(toggleSelTarget);
-		selToggleComponent.setTooltip("Replace only in occurances of the currently selected text");
-
-		const toggleSelLabel = document.createElement(divClass);
-		toggleSelLabel.addClass("check-label");
-		toggleSelLabel.setText("Replace only in selection");
-
-		// Set default to enable
-		regToggleComponent.setValue(true);
-		
-		// Add childs
-		toggleSelContainerEl.appendChild(toggleSelLabel);
-		toggleSelContainerEl.appendChild(toggleSelTarget);
-
-		bcontainerEl.appendChild(submitButtonTarget);
-		bcontainerEl.appendChild(cancelButtonTarget);
-
-		contentEl.appendChild(toggleRegexContainerEl);
-		contentEl.appendChild(toggleSelContainerEl);
-		contentEl.appendChild(bcontainerEl);
-
+		// Apply settings
+		regToggleComponent.setValue(this.settings.useRegEx);
+		selToggleComponent.setValue(this.settings.selOnly);
 		findInputComponent.setValue(this.settings.findText);
 		replaceWithInputComponent.setValue(this.settings.replaceText);
+		
+		bcontainerEl.appendChild(submitButtonTarget);
+		bcontainerEl.appendChild(cancelButtonTarget);
+		contentEl.appendChild(bcontainerEl);
 	}
 
 	onClose() {
