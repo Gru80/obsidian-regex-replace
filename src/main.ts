@@ -1,3 +1,4 @@
+import { notEqual } from "assert";
 import {
 	App,
 	ButtonComponent,
@@ -9,17 +10,32 @@ import {
 	ToggleComponent,
 } from "obsidian";
 
+interface RfrPluginSettings {
+	findText: string;
+	replaceText: string;
+	regexFlags: string;
+}
+
+const DEFAULT_SETTINGS: RfrPluginSettings = {
+	findText: '',
+	replaceText: '',
+	regexFlags: 'gm'
+}
+
 const logger = (logString: string): void => {console.log ("RegexFR: " + logString)};
 
 export default class RegexFindReplacePlugin extends Plugin {
+	settings: RfrPluginSettings;
+
 	async onload() {
-		logger("Loading...");
+		logger("Loading Plugin...");
+		await this.loadSettings();
 
 		this.addCommand({
 			id: "obsidian-regex-replace",
 			name: "Find and Replace using regular expressions",
 			editorCallback: (editor) => {
-				new FindAndReplaceModal(this.app, editor).open();
+				new FindAndReplaceModal(this.app, editor, this.settings, this).open();
 			},
 		});
 	}
@@ -27,16 +43,28 @@ export default class RegexFindReplacePlugin extends Plugin {
 	onunload() {
 		logger("Bye!");
 	}
+
+	async loadSettings() {
+		logger("   Loading Settings...");
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		logger("      findVal:     " + this.settings.findText);
+		logger("      replaceText: " + this.settings.replaceText);
+		logger("      regexFlags:  " + this.settings.regexFlags);
+	}
+
 }
 
 class FindAndReplaceModal extends Modal {
-	constructor(app: App, editor: Editor) {
+	constructor(app: App, editor: Editor, settings: RfrPluginSettings, plugin: Plugin) {
 		super(app);
-		this.shouldRestoreSelection = true;
 		this.editor = editor;
+		this.settings = settings;
+		this.plugin = plugin;
 	}
 
+	settings: RfrPluginSettings;
 	editor: Editor;
+	plugin: Plugin;
 
 	onOpen() {
 		let { contentEl, titleEl, editor, modalEl } = this;
@@ -47,7 +75,7 @@ class FindAndReplaceModal extends Modal {
 		const rowClass = "row";
 		const divClass = "div";
 
-		const createInterfaceInputRow = (label: string,	placeholder: string,): TextComponent => {
+		const addTextComponent = (label: string, placeholder: string,): TextComponent => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
 
@@ -68,9 +96,10 @@ class FindAndReplaceModal extends Modal {
 			return component;
 		};
 
-		const findInputComponent = createInterfaceInputRow("Find:", "e.g. (.*)");
-		const replaceWithInputComponent = createInterfaceInputRow("Replace:","e.g. $1",);
+		const findInputComponent = addTextComponent('Find:', 'e.g. (.*)');
+		const replaceWithInputComponent = addTextComponent('Replace:', 'e.g. $1');
 
+		// Create Button row
 		const bcontainerEl = document.createElement(divClass);
 		bcontainerEl.addClass(rowClass);
 
@@ -89,23 +118,24 @@ class FindAndReplaceModal extends Modal {
 		cancelButtonComponent.onClick(() => {
 			logger("Action cancelled.");
 			this.close();
+			new Notice('Nothing changed');
 		});
-
 
 		submitButtonComponent.setButtonText("Replace All");
 		submitButtonComponent.setCta();
 		submitButtonComponent.onClick(() => {
 			let resultString = "";
+			const replace = replaceWithInputComponent.getValue();
 
 			// Check if regular expressions should be used
 			if(regToggleComponent.getValue()) {
-				const search = new RegExp(findInputComponent.getValue(),"gm");
-				logger("USING REGEXP");
+				const search = new RegExp(findInputComponent.getValue(),this.settings.regexFlags);
+				logger("USING REGEXP with flags: " + this.settings.regexFlags);
 				if(!selToggleComponent.getValue()) {
 					logger(" SCOPE: Full document");
 					let rresult = editor.getValue().match(search);
 					if(rresult) {
-						editor.setValue(editor.getValue().replace(search, replaceWithInputComponent.getValue()));
+						editor.setValue(editor.getValue().replace(search, replace));
 						resultString = "Made " + rresult.length + " replacement(s) in document";
 					}
 					else {
@@ -117,7 +147,7 @@ class FindAndReplaceModal extends Modal {
 					let selectedText = editor.getSelection();
 					let rresult = editor.getValue().match(search);
 					if (rresult) {
-						selectedText = selectedText.replace(search, replaceWithInputComponent.getValue());
+						selectedText = selectedText.replace(search, replace);
 						editor.replaceSelection(selectedText);
 						resultString = "Made " + rresult.length + " replacement(s) in selection";
 					}
@@ -128,7 +158,6 @@ class FindAndReplaceModal extends Modal {
 			}
 			else {
 				const search = findInputComponent.getValue();
-				const replace = replaceWithInputComponent.getValue();
 
 				logger("NOT using REGEXP");
 				if(!selToggleComponent.getValue()) {
@@ -141,9 +170,16 @@ class FindAndReplaceModal extends Modal {
 					editor.replaceSelection(editor.getSelection().split(search).join(replace));
 					resultString = "Replace in selection finished.";
 				}
-			} 			
+			} 		
+			
+			// Saving find and replace text
+			this.settings.findText = findInputComponent.getValue();
+			this.settings.replaceText = replace;
+			this.plugin.saveData(this.settings);
+
 			this.close();
-			new Notice(resultString)			
+			new Notice(resultString)
+					
 		});
 
 		// Build toggle row for enable/disable regular expressions
@@ -188,6 +224,9 @@ class FindAndReplaceModal extends Modal {
 		contentEl.appendChild(toggleRegexContainerEl);
 		contentEl.appendChild(toggleSelContainerEl);
 		contentEl.appendChild(bcontainerEl);
+
+		findInputComponent.setValue(this.settings.findText);
+		replaceWithInputComponent.setValue(this.settings.replaceText);
 	}
 
 	onClose() {

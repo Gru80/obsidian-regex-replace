@@ -21,6 +21,7 @@
 	margin-right: 8px;
 }
 
+
 .find-replace-modal .modal-content .row .input-wrapper {
 	display: flex;
 	align-items: center;
@@ -37,5 +38,5 @@
 
 .find-replace-modal .modal-content .button-wrapper {
 	justify-content: center;
-	margin-top: 8px;
+	margin-top: 16px;
 }

@@ -12,3 +12,6 @@ main.js
 
 # Exclude sourcemaps
 *.map
+
+# Obsidian saved settings
+data.json
