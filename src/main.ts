@@ -25,13 +25,16 @@ const DEFAULT_SETTINGS: RfrPluginSettings = {
 	selOnly: false
 }
 
-const logger = (logString: string): void => {console.log ("RegexFR: " + logString)};
+// logThreshold: 0 ... only error messages
+//               9 ... verbose output
+const logThreshold = 7;
+const logger = (logString: string, logLevel=0): void => {if (logLevel <= logThreshold) console.log ("RegexFR: " + logString)};
 
 export default class RegexFindReplacePlugin extends Plugin {
 	settings: RfrPluginSettings;
 
 	async onload() {
-		logger("Loading Plugin...");
+		logger("Loading Plugin...", 9);
 		await this.loadSettings();
 
 		this.addCommand({
@@ -44,15 +47,15 @@ export default class RegexFindReplacePlugin extends Plugin {
 	}
 
 	onunload() {
-		logger("Bye!");
+		logger("Bye!", 9);
 	}
 
 	async loadSettings() {
-		logger("   Loading Settings...");
+		logger("Loading Settings...", 6);
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		logger("      findVal:     " + this.settings.findText);
-		logger("      replaceText: " + this.settings.replaceText);
-		logger("      regexFlags:  " + this.settings.regexFlags);
+		logger("   findVal:     " + this.settings.findText, 6);
+		logger("   replaceText: " + this.settings.replaceText, 6);
+		logger("   regexFlags:  " + this.settings.regexFlags, 6);
 	}
 
 }
@@ -144,7 +147,7 @@ class FindAndReplaceModal extends Modal {
 		
 		cancelButtonComponent.setButtonText("Cancel");
 		cancelButtonComponent.onClick(() => {
-			logger("Action cancelled.");
+			logger("Action cancelled.", 8);
 			this.close();
 			new Notice('Nothing changed');
 		});
@@ -163,10 +166,10 @@ class FindAndReplaceModal extends Modal {
 
 			// Check if regular expressions should be used
 			if(regToggleComponent.getValue()) {
-				logger("USING regex with flags: " + this.settings.regexFlags);
+				logger("USING regex with flags: " + this.settings.regexFlags, 8);
 				const search = new RegExp(searchString,this.settings.regexFlags);
 				if(!selToggleComponent.getValue()) {
-					logger("   SCOPE: Full document");
+					logger("   SCOPE: Full document", 9);
 					const rresult = editor.getValue().match(search);
 					if (rresult) {
 						editor.setValue(editor.getValue().replace(search, replace));
@@ -174,7 +177,7 @@ class FindAndReplaceModal extends Modal {
 					}
 				}
 				else {
-					logger("   SCOPE: Selection");
+					logger("   SCOPE: Selection", 9);
 					let selectedText = editor.getSelection();
 					const rresult = selectedText.match(search);
 					if (rresult) {
@@ -184,15 +187,15 @@ class FindAndReplaceModal extends Modal {
 				}
 			}
 			else {
-				logger("NOT using regex");
+				logger("NOT using regex", 8);
 				let nrOfHits = 0;
 				if(!selToggleComponent.getValue()) {
-					logger("   SCOPE: Full document");
+					logger("   SCOPE: Full document", 9);
 					nrOfHits = editor.getValue().split(searchString).length - 1;
 					editor.setValue(editor.getValue().split(searchString).join(replace));
 				}
 				else {
-					logger("   SCOPE: Selection");
+					logger("   SCOPE: Selection", 9);
 					nrOfHits = editor.getSelection().split(searchString).length - 1;
 					editor.replaceSelection(editor.getSelection().split(searchString).join(replace));
 				}
