@@ -153,12 +153,18 @@ class FindAndReplaceModal extends Modal {
 		submitButtonComponent.setCta();
 		submitButtonComponent.onClick(() => {
 			let resultString = "No match";
+			const searchString = findInputComponent.getValue();
 			const replace = replaceWithInputComponent.getValue();
+
+			if (searchString === '') {
+				new Notice('Nothing to search for!');
+				return;
+			}
 
 			// Check if regular expressions should be used
 			if(regToggleComponent.getValue()) {
 				logger("USING regex with flags: " + this.settings.regexFlags);
-				const search = new RegExp(findInputComponent.getValue(),this.settings.regexFlags);
+				const search = new RegExp(searchString,this.settings.regexFlags);
 				if(!selToggleComponent.getValue()) {
 					logger("   SCOPE: Full document");
 					const rresult = editor.getValue().match(search);
@@ -178,21 +184,19 @@ class FindAndReplaceModal extends Modal {
 				}
 			}
 			else {
-				const search = findInputComponent.getValue();
-
 				logger("NOT using regex");
+				let nrOfHits = 0;
 				if(!selToggleComponent.getValue()) {
 					logger("   SCOPE: Full document");
-					const nrOfHits = editor.getValue().split(search).length - 1;
-					editor.setValue(editor.getValue().split(search).join(replace));
-					resultString = `Made ${nrOfHits} replacement(s) in document`;
+					nrOfHits = editor.getValue().split(searchString).length - 1;
+					editor.setValue(editor.getValue().split(searchString).join(replace));
 				}
 				else {
 					logger("   SCOPE: Selection");
-					const nrOfHits = editor.getSelection().split(search).length - 1;
-					editor.replaceSelection(editor.getSelection().split(search).join(replace));
-					resultString = `Made ${nrOfHits} replacement(s) in selection`;
+					nrOfHits = editor.getSelection().split(searchString).length - 1;
+					editor.replaceSelection(editor.getSelection().split(searchString).join(replace));
 				}
+				resultString = `Made ${nrOfHits} replacement(s) in document`;
 			} 		
 			
 			// Saving settings (find/replace text and toggle switch states)
@@ -203,7 +207,7 @@ class FindAndReplaceModal extends Modal {
 			this.plugin.saveData(this.settings);
 
 			this.close();
-			new Notice(resultString)					
+			new Notice(resultString);					
 		});
 
 		// Apply settings
