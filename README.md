@@ -7,7 +7,7 @@ Provides a dialog to find and replace text in the currently opened note.
 - Replace occurances in the currently slected text or in the whole document
 
 
-![Regex FindReplace Dialog](screenshot.png)
+![Regex FindReplace Dialog](res/dialog.png)
 
 ## How to use
 - Run `Regex Find/Replace: Find and Replace using regular expressions` from the command palette or
