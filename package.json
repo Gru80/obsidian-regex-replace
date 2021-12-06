@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-regex-replace",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "An Obsidian plugin, which allows to replace text in the current editor using regular expressions.",
 	"main": "build/main.js",
 	"scripts": {
@@ -16,7 +16,7 @@
 		"@rollup/plugin-typescript": "^8.2.1",
 		"@types/node": "^14.14.37",
 		"@typescript-eslint/eslint-plugin": "^5.5.0",
-		"obsidian": "^0.12.0",
+		"obsidian": "^0.12.17",
 		"rollup": "^2.32.1",
 		"tslib": "^2.2.0",
 		"typescript": "^4.2.4"
