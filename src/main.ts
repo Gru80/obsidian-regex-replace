@@ -27,7 +27,7 @@ const DEFAULT_SETTINGS: RfrPluginSettings = {
 
 // logThreshold: 0 ... only error messages
 //               9 ... verbose output
-const logThreshold = 7;
+const logThreshold = 9;
 const logger = (logString: string, logLevel=0): void => {if (logLevel <= logThreshold) console.log ("RegexFR: " + logString)};
 
 export default class RegexFindReplacePlugin extends Plugin {
@@ -149,15 +149,16 @@ class FindAndReplaceModal extends Modal {
 		cancelButtonComponent.onClick(() => {
 			logger("Action cancelled.", 8);
 			this.close();
-			new Notice('Nothing changed');
 		});
 
 		submitButtonComponent.setButtonText("Replace All");
 		submitButtonComponent.setCta();
 		submitButtonComponent.onClick(() => {
 			let resultString = "No match";
+			let scope = "";
 			const searchString = findInputComponent.getValue();
-			const replace = replaceWithInputComponent.getValue();
+			const replaceString = replaceWithInputComponent.getValue();
+			const selectedText = editor.getSelection();
 
 			if (searchString === '') {
 				new Notice('Nothing to search for!');
@@ -167,21 +168,21 @@ class FindAndReplaceModal extends Modal {
 			// Check if regular expressions should be used
 			if(regToggleComponent.getValue()) {
 				logger("USING regex with flags: " + this.settings.regexFlags, 8);
-				const search = new RegExp(searchString,this.settings.regexFlags);
+				const searchRegex = new RegExp(searchString,this.settings.regexFlags);
 				if(!selToggleComponent.getValue()) {
 					logger("   SCOPE: Full document", 9);
-					const rresult = editor.getValue().match(search);
+					const documentText = editor.getValue();
+					const rresult = documentText.match(searchRegex);
 					if (rresult) {
-						editor.setValue(editor.getValue().replace(search, replace));
+						editor.setValue(documentText.replace(searchRegex, replaceString));
 						resultString = `Made ${rresult.length} replacement(s) in document`;			
 					}
 				}
 				else {
 					logger("   SCOPE: Selection", 9);
-					let selectedText = editor.getSelection();
-					const rresult = selectedText.match(search);
+					const rresult = selectedText.match(searchRegex);
 					if (rresult) {
-						editor.replaceSelection(selectedText.replace(search, replace));	
+						editor.replaceSelection(selectedText.replace(searchRegex, replaceString));	
 						resultString = `Made ${rresult.length} replacement(s) in selection`;
 					}
 				}
@@ -191,20 +192,23 @@ class FindAndReplaceModal extends Modal {
 				let nrOfHits = 0;
 				if(!selToggleComponent.getValue()) {
 					logger("   SCOPE: Full document", 9);
-					nrOfHits = editor.getValue().split(searchString).length - 1;
-					editor.setValue(editor.getValue().split(searchString).join(replace));
+					scope = 'selection'
+					const documentText = editor.getValue();
+					nrOfHits = documentText.split(searchString).length - 1;
+					editor.setValue(documentText.split(searchString).join(replaceString));
 				}
 				else {
 					logger("   SCOPE: Selection", 9);
-					nrOfHits = editor.getSelection().split(searchString).length - 1;
-					editor.replaceSelection(editor.getSelection().split(searchString).join(replace));
+					scope = 'document';
+					nrOfHits = selectedText.split(searchString).length - 1;
+					editor.replaceSelection(selectedText.split(searchString).join(replaceString));
 				}
-				resultString = `Made ${nrOfHits} replacement(s) in document`;
+				resultString = `Made ${nrOfHits} replacement(s) in ${scope}`;
 			} 		
 			
 			// Saving settings (find/replace text and toggle switch states)
-			this.settings.findText = findInputComponent.getValue();
-			this.settings.replaceText = replace;
+			this.settings.findText = searchString;
+			this.settings.replaceText = replaceString;
 			this.settings.useRegEx = regToggleComponent.getValue();
 			this.settings.selOnly = selToggleComponent.getValue();
 			this.plugin.saveData(this.settings);
@@ -223,6 +227,14 @@ class FindAndReplaceModal extends Modal {
 		buttonContainerEl.appendChild(submitButtonTarget);
 		buttonContainerEl.appendChild(cancelButtonTarget);
 		contentEl.appendChild(buttonContainerEl);
+
+		// If no text is selected, disable selection-toggle-switch
+		if (editor.getSelection() === '') {
+			logger('No text selected -> set scope to full document',8);
+			selToggleComponent.setValue(false);
+			selToggleComponent.disabled = true;
+			selToggleComponent.setTooltip('Option disabled - not text is selected');
+		}
 	}
 
 	onClose() {
