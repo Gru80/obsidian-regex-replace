@@ -7,7 +7,7 @@ import {
 	Plugin,
 	TextComponent,
 	ToggleComponent,
-} from "obsidian";
+} from 'obsidian';
 
 interface RfrPluginSettings {
 	findText: string;
@@ -28,18 +28,18 @@ const DEFAULT_SETTINGS: RfrPluginSettings = {
 // logThreshold: 0 ... only error messages
 //               9 ... verbose output
 const logThreshold = 9;
-const logger = (logString: string, logLevel=0): void => {if (logLevel <= logThreshold) console.log ("RegexFR: " + logString)};
+const logger = (logString: string, logLevel=0): void => {if (logLevel <= logThreshold) console.log ('RegexFR: ' + logString)};
 
 export default class RegexFindReplacePlugin extends Plugin {
 	settings: RfrPluginSettings;
 
 	async onload() {
-		logger("Loading Plugin...", 9);
+		logger('Loading Plugin...', 9);
 		await this.loadSettings();
 
 		this.addCommand({
-			id: "obsidian-regex-replace",
-			name: "Find and Replace using regular expressions",
+			id: 'obsidian-regex-replace',
+			name: 'Find and Replace using regular expressions',
 			editorCallback: (editor) => {
 				new FindAndReplaceModal(this.app, editor, this.settings, this).open();
 			},
@@ -47,15 +47,15 @@ export default class RegexFindReplacePlugin extends Plugin {
 	}
 
 	onunload() {
-		logger("Bye!", 9);
+		logger('Bye!', 9);
 	}
 
 	async loadSettings() {
-		logger("Loading Settings...", 6);
+		logger('Loading Settings...', 6);
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		logger("   findVal:     " + this.settings.findText, 6);
-		logger("   replaceText: " + this.settings.replaceText, 6);
-		logger("   regexFlags:  " + this.settings.regexFlags, 6);
+		logger('   findVal:     ' + this.settings.findText, 6);
+		logger('   replaceText: ' + this.settings.replaceText, 6);
+		logger('   regexFlags:  ' + this.settings.regexFlags, 6);
 	}
 
 }
@@ -75,21 +75,21 @@ class FindAndReplaceModal extends Modal {
 	onOpen() {
 		const { contentEl, titleEl, editor, modalEl } = this;
 
-		modalEl.addClass("find-replace-modal");
-		titleEl.setText("Regex Find/Replace");
+		modalEl.addClass('find-replace-modal');
+		titleEl.setText('Regex Find/Replace');
 
-		const rowClass = "row";
-		const divClass = "div";
+		const rowClass = 'row';
+		const divClass = 'div';
 
 		const addTextComponent = (label: string, placeholder: string): TextComponent => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
 
 			const targetEl = document.createElement(divClass);
-			targetEl.addClass("input-wrapper");
+			targetEl.addClass('input-wrapper');
 
 			const labelEl = document.createElement(divClass);
-			labelEl.addClass("input-label");
+			labelEl.addClass('input-label');
 			labelEl.setText(label);
 
 			containerEl.appendChild(labelEl);
@@ -113,7 +113,7 @@ class FindAndReplaceModal extends Modal {
 			component.setTooltip(tooltip);
 	
 			const labelEl = document.createElement(divClass);
-			labelEl.addClass("check-label");
+			labelEl.addClass('check-label');
 			labelEl.setText(label);
 	
 			containerEl.appendChild(labelEl);
@@ -135,27 +135,27 @@ class FindAndReplaceModal extends Modal {
 		buttonContainerEl.addClass(rowClass);
 
 		const submitButtonTarget = document.createElement(divClass);
-		submitButtonTarget.addClass("button-wrapper");
+		submitButtonTarget.addClass('button-wrapper');
 		submitButtonTarget.addClass(rowClass);
 
 		const cancelButtonTarget = document.createElement(divClass);
-		cancelButtonTarget.addClass("button-wrapper");
+		cancelButtonTarget.addClass('button-wrapper');
 		cancelButtonTarget.addClass(rowClass);
 
 		const submitButtonComponent = new ButtonComponent(submitButtonTarget);
 		const cancelButtonComponent = new ButtonComponent(cancelButtonTarget);
 		
-		cancelButtonComponent.setButtonText("Cancel");
+		cancelButtonComponent.setButtonText('Cancel');
 		cancelButtonComponent.onClick(() => {
-			logger("Action cancelled.", 8);
+			logger('Action cancelled.', 8);
 			this.close();
 		});
 
-		submitButtonComponent.setButtonText("Replace All");
+		submitButtonComponent.setButtonText('Replace All');
 		submitButtonComponent.setCta();
 		submitButtonComponent.onClick(() => {
-			let resultString = "No match";
-			let scope = "";
+			let resultString = 'No match';
+			let scope = '';
 			const searchString = findInputComponent.getValue();
 			const replaceString = replaceWithInputComponent.getValue();
 			const selectedText = editor.getSelection();
@@ -167,10 +167,10 @@ class FindAndReplaceModal extends Modal {
 
 			// Check if regular expressions should be used
 			if(regToggleComponent.getValue()) {
-				logger("USING regex with flags: " + this.settings.regexFlags, 8);
+				logger('USING regex with flags: ' + this.settings.regexFlags, 8);
 				const searchRegex = new RegExp(searchString,this.settings.regexFlags);
 				if(!selToggleComponent.getValue()) {
-					logger("   SCOPE: Full document", 9);
+					logger('   SCOPE: Full document', 9);
 					const documentText = editor.getValue();
 					const rresult = documentText.match(searchRegex);
 					if (rresult) {
@@ -179,7 +179,7 @@ class FindAndReplaceModal extends Modal {
 					}
 				}
 				else {
-					logger("   SCOPE: Selection", 9);
+					logger('   SCOPE: Selection', 9);
 					const rresult = selectedText.match(searchRegex);
 					if (rresult) {
 						editor.replaceSelection(selectedText.replace(searchRegex, replaceString));	
@@ -188,17 +188,17 @@ class FindAndReplaceModal extends Modal {
 				}
 			}
 			else {
-				logger("NOT using regex", 8);
+				logger('NOT using regex', 8);
 				let nrOfHits = 0;
 				if(!selToggleComponent.getValue()) {
-					logger("   SCOPE: Full document", 9);
+					logger('   SCOPE: Full document', 9);
 					scope = 'selection'
 					const documentText = editor.getValue();
 					nrOfHits = documentText.split(searchString).length - 1;
 					editor.setValue(documentText.split(searchString).join(replaceString));
 				}
 				else {
-					logger("   SCOPE: Selection", 9);
+					logger('   SCOPE: Selection', 9);
 					scope = 'document';
 					nrOfHits = selectedText.split(searchString).length - 1;
 					editor.replaceSelection(selectedText.split(searchString).join(replaceString));
