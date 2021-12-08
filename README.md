@@ -1,3 +1,6 @@
+![release](https://img.shields.io/github/v/release/Gru80/obsidian-regex-replace)
+![downloads](https://img.shields.io/github/downloads/Gru80/obsidian-regex-replace/total.svg)
+
 # Obsidian Plugin - Regex Find/Replace
 Provides a dialog to find and replace text in the currently opened note.
 
