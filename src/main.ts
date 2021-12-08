@@ -7,22 +7,26 @@ import {
 	Plugin,
 	TextComponent,
 	ToggleComponent,
+	PluginSettingTab,
+	Setting
 } from 'obsidian';
 
 interface RfrPluginSettings {
 	findText: string;
 	replaceText: string;
-	regexFlags: string;
 	useRegEx: boolean;
 	selOnly: boolean;
+	caseInsensitive: boolean;
+	processLineBreak: boolean;
 }
 
 const DEFAULT_SETTINGS: RfrPluginSettings = {
 	findText: '',
 	replaceText: '',
-	regexFlags: 'gm',
 	useRegEx: true,
-	selOnly: false
+	selOnly: false,
+	caseInsensitive: false,
+	processLineBreak: false
 }
 
 // logThreshold: 0 ... only error messages
@@ -36,6 +40,9 @@ export default class RegexFindReplacePlugin extends Plugin {
 	async onload() {
 		logger('Loading Plugin...', 9);
 		await this.loadSettings();
+
+		this.addSettingTab(new RegexFindReplaceSettingTab(this.app, this));
+
 
 		this.addCommand({
 			id: 'obsidian-regex-replace',
@@ -53,9 +60,15 @@ export default class RegexFindReplacePlugin extends Plugin {
 	async loadSettings() {
 		logger('Loading Settings...', 6);
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		logger('   findVal:     ' + this.settings.findText, 6);
-		logger('   replaceText: ' + this.settings.replaceText, 6);
-		logger('   regexFlags:  ' + this.settings.regexFlags, 6);
+		logger('   findVal:         ' + this.settings.findText, 6);
+		logger('   replaceText:     ' + this.settings.replaceText, 6);
+		logger('   caseInsensitive: ' + this.settings.caseInsensitive, 6);
+		logger('   processLineBreak: ' + this.settings.processLineBreak, 6);
+
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings);
 	}
 
 }
@@ -81,6 +94,9 @@ class FindAndReplaceModal extends Modal {
 		const rowClass = 'row';
 		const divClass = 'div';
 		const noSelection = editor.getSelection() === '';
+		let regexFlags = 'gm';
+		if (this.settings.caseInsensitive) regexFlags = regexFlags.concat('i');
+
 		logger('No text selected?: ' + noSelection, 9);
 
 		const addTextComponent = (label: string, placeholder: string): TextComponent => {
@@ -171,8 +187,9 @@ class FindAndReplaceModal extends Modal {
 
 			// Check if regular expressions should be used
 			if(regToggleComponent.getValue()) {
-				logger('USING regex with flags: ' + this.settings.regexFlags, 8);
-				const searchRegex = new RegExp(searchString,this.settings.regexFlags);
+				logger('USING regex with flags: ' + regexFlags, 8);
+
+				const searchRegex = new RegExp(searchString, regexFlags);
 				if(!selToggleComponent.getValue()) {
 					logger('   SCOPE: Full document', 9);
 					const documentText = editor.getValue();
@@ -237,8 +254,35 @@ class FindAndReplaceModal extends Modal {
 
 	}
 
+	
 	onClose() {
 		const { contentEl } = this;
 		contentEl.empty();
+	}
+}
+
+class RegexFindReplaceSettingTab extends PluginSettingTab {
+	plugin: RegexFindReplacePlugin;
+
+	constructor(app: App, plugin: RegexFindReplacePlugin) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		const {containerEl} = this;
+		containerEl.empty();
+
+		new Setting(containerEl)
+			.setName('Case Insensitive')
+			.setDesc('when using regular expressions (regex /i modifier)')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.caseInsensitive)
+				.onChange(async (value) => {
+					logger('Settings update: caseInsensitive: ' + value);
+					this.plugin.settings.caseInsensitive = value;
+					await this.plugin.saveSettings();
+				}));
+
 	}
 }
