@@ -3,12 +3,11 @@
 
 # Obsidian Plugin - Regex Find/Replace
 Provides a dialog to find and replace text in the currently opened note.
+In addition to Obsidians on-board find/repace function, this plugin provides options to
+- use regular expressions or just plain text
+- replace found occurances in the currently slected text or in the whole document
 
-
-## Options
-- Use regular expressions or just plain text
-- Replace occurances in the currently slected text or in the whole document
-
+Desktop as well as mobile versions of Obsidian are supported.
 
 ![Regex FindReplace Dialog](res/dialog.png)
 
