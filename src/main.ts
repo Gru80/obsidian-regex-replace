@@ -80,6 +80,8 @@ class FindAndReplaceModal extends Modal {
 
 		const rowClass = 'row';
 		const divClass = 'div';
+		const noSelection = editor.getSelection() === '';
+		logger('No text selected?: ' + noSelection, 9);
 
 		const addTextComponent = (label: string, placeholder: string): TextComponent => {
 			const containerEl = document.createElement(divClass);
@@ -102,7 +104,7 @@ class FindAndReplaceModal extends Modal {
 			return component;
 		};
 
-		const addToggleComponent = (label: string, tooltip: string): ToggleComponent => {
+		const addToggleComponent = (label: string, tooltip: string, hide = false): ToggleComponent => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
 	
@@ -118,7 +120,7 @@ class FindAndReplaceModal extends Modal {
 	
 			containerEl.appendChild(labelEl);
 			containerEl.appendChild(targetEl);
-			contentEl.appendChild(containerEl);
+			if (!hide) contentEl.appendChild(containerEl);
 			return component;
 		};
 
@@ -126,9 +128,11 @@ class FindAndReplaceModal extends Modal {
 		const findInputComponent = addTextComponent('Find:', 'e.g. (.*)');
 		const replaceWithInputComponent = addTextComponent('Replace:', 'e.g. $1');
 
-		// Create toggle switches
+		// Create and show regular expression toggle switch
 		const regToggleComponent = addToggleComponent('Use regular expressions', 'If enabled, regular expressions in the find field are processed as such, and regex groups might be addressed in the replace field');
-		const selToggleComponent = addToggleComponent('Replace only in selection', 'If enabled, replaces only occurances in the currently selected text');
+		
+		// Create and show selection toggle switch only if any text is selected
+		const selToggleComponent = addToggleComponent('Replace only in selection', 'If enabled, replaces only occurances in the currently selected text', noSelection);
 
 		// Create Buttons
 		const buttonContainerEl = document.createElement(divClass);
@@ -229,12 +233,8 @@ class FindAndReplaceModal extends Modal {
 		contentEl.appendChild(buttonContainerEl);
 
 		// If no text is selected, disable selection-toggle-switch
-		if (editor.getSelection() === '') {
-			logger('No text selected -> set scope to full document',8);
-			selToggleComponent.setValue(false);
-			selToggleComponent.disabled = true;
-			selToggleComponent.setTooltip('Option disabled - not text is selected');
-		}
+		if (noSelection) selToggleComponent.setValue(false);
+
 	}
 
 	onClose() {
