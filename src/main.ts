@@ -18,6 +18,8 @@ interface RfrPluginSettings {
 	selOnly: boolean;
 	caseInsensitive: boolean;
 	processLineBreak: boolean;
+	processTab: boolean;
+	prefillFind: boolean;
 }
 
 const DEFAULT_SETTINGS: RfrPluginSettings = {
@@ -26,7 +28,9 @@ const DEFAULT_SETTINGS: RfrPluginSettings = {
 	useRegEx: true,
 	selOnly: false,
 	caseInsensitive: false,
-	processLineBreak: false
+	processLineBreak: false,
+	processTab: false,
+	prefillFind: false
 }
 
 // logThreshold: 0 ... only error messages
@@ -273,9 +277,11 @@ class RegexFindReplaceSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 		containerEl.empty();
 
+		containerEl.createEl('h4', {text: 'Regular Expression Settings'});
+
 		new Setting(containerEl)
 			.setName('Case Insensitive')
-			.setDesc('when using regular expressions (regex /i modifier)')
+			.setDesc('When using regular expressions, apply the \'/i\' modifier for case insensitive search)')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.caseInsensitive)
 				.onChange(async (value) => {
@@ -283,6 +289,47 @@ class RegexFindReplaceSettingTab extends PluginSettingTab {
 					this.plugin.settings.caseInsensitive = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Process \\n as line break')
+			.setDesc('When \'\\n\' is used in the replace field, a \'line break\' will be inserted accordingly')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.processLineBreak)
+				.setTooltip('Sorry - still to come')
+				.onChange(async (value) => {
+					logger('Settings update: processLineBreak: ' + value);
+					this.plugin.settings.processLineBreak = value;
+					await this.plugin.saveSettings();
+				}))
+			.setDisabled(true);;
+
+		new Setting(containerEl)
+			.setName('Process \\t as tab')
+			.setDesc('When \'\\t\' is used in the replace field, a \'tab\' will be inserted accordingly')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.processTab)
+				.setTooltip('Sorry - still to come')
+				.onChange(async (value) => {
+					logger('Settings update: processTab: ' + value);
+					this.plugin.settings.processTab = value;
+					await this.plugin.saveSettings();
+				}))
+			.setDisabled(true);
+
+		containerEl.createEl('h4', {text: 'General Settings'});
+
+		new Setting(containerEl)
+			.setName('Prefill Find Field')
+			.setDesc('Copy the currently selected text (if any) into the \'Find\' field')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.prefillFind)
+				.setTooltip('Sorry - still to come')
+				.onChange(async (value) => {
+					logger('Settings update: prefillFind: ' + value);
+					this.plugin.settings.prefillFind = value;
+					await this.plugin.saveSettings();
+				}))
+			.setDisabled(true);
 
 	}
 }
