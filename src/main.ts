@@ -219,14 +219,16 @@ class FindAndReplaceModal extends Modal {
 					logger('   SCOPE: Full document', 9);
 					scope = 'selection'
 					const documentText = editor.getValue();
-					nrOfHits = documentText.split(searchString).length - 1;
-					editor.setValue(documentText.split(searchString).join(replaceString));
+					const documentSplit = documentText.split(searchString);
+					nrOfHits = documentSplit.length - 1;
+					editor.setValue(documentSplit.join(replaceString));
 				}
 				else {
 					logger('   SCOPE: Selection', 9);
 					scope = 'document';
-					nrOfHits = selectedText.split(searchString).length - 1;
-					editor.replaceSelection(selectedText.split(searchString).join(replaceString));
+					const selectedSplit = selectedText.split(searchString);
+					nrOfHits = selectedSplit.length - 1;
+					editor.replaceSelection(selectedSplit.join(replaceString));
 				}
 				resultString = `Made ${nrOfHits} replacement(s) in ${scope}`;
 			} 		
