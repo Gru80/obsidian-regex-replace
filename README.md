@@ -40,3 +40,16 @@ The plugin can also be installed manually from the repository:
 - Launch Obsidian and open the Settings dialog
 - Disable Safe Mode in the `Community Plugins` tab (this enables community plugins to be enabled)
 - Enable the new plugin
+
+## Version History
+### 1.0.0
+Initial release
+
+### 1.1.0
+- Case insensitive search can now be enabled in the settings panel of the plugin (regex flag /i)
+- Find-in-selection toggle switch is disabled if no text is selected in the note
+- Performance improvements and bug-fixes
+
+### 1.2.0
+- Option to interpret `\n` and `\t` in repleace field to insert line-breaks and tabs accordingly
+ 

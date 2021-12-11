@@ -181,12 +181,28 @@ class FindAndReplaceModal extends Modal {
 			let resultString = 'No match';
 			let scope = '';
 			const searchString = findInputComponent.getValue();
-			const replaceString = replaceWithInputComponent.getValue();
+			let replaceString = replaceWithInputComponent.getValue();
 			const selectedText = editor.getSelection();
 
 			if (searchString === '') {
 				new Notice('Nothing to search for!');
 				return;
+			}
+
+			// Replace line breaks in find-field if option is enabled
+			if (this.settings.processLineBreak) {
+				logger('Replacing linebreaks in replace-field', 9);
+				logger('  old: ' + replaceString, 9);
+				replaceString = replaceString.replace(/\\n/gm, '\n');
+				logger('  new: ' + replaceString, 9);
+			}
+
+			// Replace line breaks in find-field if option is enabled
+			if (this.settings.processTab) {
+				logger('Replacing tabs in replace-field', 9);
+				logger('  old: ' + replaceString, 9);
+				replaceString = replaceString.replace(/\\t/gm, '\t');
+				logger('  new: ' + replaceString, 9);
 			}
 
 			// Check if regular expressions should be used
@@ -292,33 +308,30 @@ class RegexFindReplaceSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
+		containerEl.createEl('h4', {text: 'General Settings'});
+
+
 		new Setting(containerEl)
 			.setName('Process \\n as line break')
 			.setDesc('When \'\\n\' is used in the replace field, a \'line break\' will be inserted accordingly')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.processLineBreak)
-				.setTooltip('Sorry - still to come')
 				.onChange(async (value) => {
 					logger('Settings update: processLineBreak: ' + value);
 					this.plugin.settings.processLineBreak = value;
 					await this.plugin.saveSettings();
-				}))
-			.setDisabled(true);;
+				}));
 
 		new Setting(containerEl)
 			.setName('Process \\t as tab')
 			.setDesc('When \'\\t\' is used in the replace field, a \'tab\' will be inserted accordingly')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.processTab)
-				.setTooltip('Sorry - still to come')
 				.onChange(async (value) => {
 					logger('Settings update: processTab: ' + value);
 					this.plugin.settings.processTab = value;
 					await this.plugin.saveSettings();
-				}))
-			.setDisabled(true);
-
-		containerEl.createEl('h4', {text: 'General Settings'});
+				}));
 
 		new Setting(containerEl)
 			.setName('Prefill Find Field')
