@@ -36,7 +36,7 @@ const DEFAULT_SETTINGS: RfrPluginSettings = {
 // logThreshold: 0 ... only error messages
 //               9 ... verbose output
 const logThreshold = 9;
-const logger = (logString: string, logLevel=0): void => {if (logLevel <= logThreshold) console.log ('RegexFR: ' + logString)};
+const logger = (logString: string, logLevel=0): void => {if (logLevel <= logThreshold) console.log ('RegexFiRe: ' + logString)};
 
 export default class RegexFindReplacePlugin extends Plugin {
 	settings: RfrPluginSettings;
@@ -103,7 +103,7 @@ class FindAndReplaceModal extends Modal {
 
 		logger('No text selected?: ' + noSelection, 9);
 
-		const addTextComponent = (label: string, placeholder: string): TextComponent => {
+		const addTextComponent = (label: string, placeholder: string, postfix=''): [TextComponent, HTMLDivElement] => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
 
@@ -114,14 +114,19 @@ class FindAndReplaceModal extends Modal {
 			labelEl.addClass('input-label');
 			labelEl.setText(label);
 
+			const labelEl2 = document.createElement(divClass);
+			labelEl2.addClass('postfix-label');
+			labelEl2.setText(postfix);
+
 			containerEl.appendChild(labelEl);
 			containerEl.appendChild(targetEl);
+			containerEl.appendChild(labelEl2);
 
 			const component = new TextComponent(targetEl);
 			component.setPlaceholder(placeholder);
 
 			contentEl.append(containerEl);
-			return component;
+			return [component, labelEl2];
 		};
 
 		const addToggleComponent = (label: string, tooltip: string, hide = false): ToggleComponent => {
@@ -145,12 +150,25 @@ class FindAndReplaceModal extends Modal {
 		};
 
 		// Create input fields
-		const findInputComponent = addTextComponent('Find:', 'e.g. (.*)');
-		const replaceWithInputComponent = addTextComponent('Replace:', 'e.g. $1');
+		const findRow = addTextComponent('Find:', 'e.g. (.*)', '/' + regexFlags);
+		const findInputComponent = findRow[0];
+		const findRegexFlags = findRow[1];
+		const replaceRow = addTextComponent('Replace:', 'e.g. $1', this.settings.processLineBreak ? '\\n=LF' : '');
+		const replaceWithInputComponent = replaceRow[0];
 
 		// Create and show regular expression toggle switch
 		const regToggleComponent = addToggleComponent('Use regular expressions', 'If enabled, regular expressions in the find field are processed as such, and regex groups might be addressed in the replace field');
 		
+		// Update regex-flags label if regular expressions are enabled or disabled
+		regToggleComponent.onChange( regNew => {
+			if (regNew) {
+				findRegexFlags.setText('/' + regexFlags);
+			}
+			else {
+				findRegexFlags.setText('');
+			}
+		})
+
 		// Create and show selection toggle switch only if any text is selected
 		const selToggleComponent = addToggleComponent('Replace only in selection', 'If enabled, replaces only occurances in the currently selected text', noSelection);
 
@@ -263,8 +281,18 @@ class FindAndReplaceModal extends Modal {
 		// Apply settings
 		regToggleComponent.setValue(this.settings.useRegEx);
 		selToggleComponent.setValue(this.settings.selOnly);
-		findInputComponent.setValue(this.settings.findText);
 		replaceWithInputComponent.setValue(this.settings.replaceText);
+		
+		// Check if the prefill find option is enabled and the selection does not contain linebreaks
+		if (this.settings.prefillFind && editor.getSelection().indexOf('\n') < 0 && !noSelection) {
+			logger('Found selection without linebreaks and option is enabled -> fill',9);
+			findInputComponent.setValue(editor.getSelection());
+			selToggleComponent.setValue(false);
+		}
+		else {
+			logger('Restore find text', 9);
+			findInputComponent.setValue(this.settings.findText);
+		}
 		
 		// Add button row to dialog
 		buttonContainerEl.appendChild(submitButtonTarget);
@@ -273,9 +301,7 @@ class FindAndReplaceModal extends Modal {
 
 		// If no text is selected, disable selection-toggle-switch
 		if (noSelection) selToggleComponent.setValue(false);
-
 	}
-
 	
 	onClose() {
 		const { contentEl } = this;
@@ -322,29 +348,16 @@ class RegexFindReplaceSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
-			.setName('Process \\t as tab')
-			.setDesc('When \'\\t\' is used in the replace field, a \'tab\' will be inserted accordingly')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.processTab)
-				.onChange(async (value) => {
-					logger('Settings update: processTab: ' + value);
-					this.plugin.settings.processTab = value;
-					await this.plugin.saveSettings();
-				}));
 
 		new Setting(containerEl)
 			.setName('Prefill Find Field')
-			.setDesc('Copy the currently selected text (if any) into the \'Find\' field')
+			.setDesc('Copy the currently selected text (if any) into the \'Find\' text field. This setting is only applied if the selection does not contain linebreaks')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.prefillFind)
-				.setTooltip('Sorry - still to come')
 				.onChange(async (value) => {
 					logger('Settings update: prefillFind: ' + value);
 					this.plugin.settings.prefillFind = value;
 					await this.plugin.saveSettings();
-				}))
-			.setDisabled(true);
-
+				}));
 	}
 }

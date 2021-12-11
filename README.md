@@ -51,5 +51,7 @@ Initial release
 - Performance improvements and bug-fixes
 
 ### 1.2.0
-- Option to interpret `\n` and `\t` in repleace field to insert line-breaks and tabs accordingly
+- Option to interpret `\n` in repleace field to insert line-break accordingly
+- Option to pre-fill the find-field with the selected word or phrase
+- Used regex-modifier flags are shown in the dialog
  

@@ -13,6 +13,15 @@
 }
 
 
+.find-replace-modal .modal-content .row .postfix-label {
+    display: flex;
+	height: 100%;
+	margin-left: 8px;
+	justify-content: flex-end;
+	color: gray;
+}
+
+
 .find-replace-modal .modal-content .row .check-label {
     display: flex;
 	justify-content: flex-end;
