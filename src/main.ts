@@ -5,10 +5,10 @@ import {
 	Modal,
 	Notice,
 	Plugin,
+	PluginSettingTab,
+	Setting,
 	TextComponent,
 	ToggleComponent,
-	PluginSettingTab,
-	Setting
 } from 'obsidian';
 
 interface RfrPluginSettings {
@@ -30,13 +30,15 @@ const DEFAULT_SETTINGS: RfrPluginSettings = {
 	caseInsensitive: false,
 	processLineBreak: false,
 	processTab: false,
-	prefillFind: false
-}
+	prefillFind: false,
+};
 
 // logThreshold: 0 ... only error messages
 //               9 ... verbose output
 const logThreshold = 9;
-const logger = (logString: string, logLevel=0): void => {if (logLevel <= logThreshold) console.log ('RegexFiRe: ' + logString)};
+const logger = (logString: string, logLevel = 0): void => {
+	if (logLevel <= logThreshold) console.log('RegexFiRe: ' + logString);
+};
 
 export default class RegexFindReplacePlugin extends Plugin {
 	settings: RfrPluginSettings;
@@ -46,7 +48,6 @@ export default class RegexFindReplacePlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addSettingTab(new RegexFindReplaceSettingTab(this.app, this));
-
 
 		this.addCommand({
 			id: 'obsidian-regex-replace',
@@ -68,26 +69,24 @@ export default class RegexFindReplacePlugin extends Plugin {
 		logger('   replaceText:     ' + this.settings.replaceText, 6);
 		logger('   caseInsensitive: ' + this.settings.caseInsensitive, 6);
 		logger('   processLineBreak: ' + this.settings.processLineBreak, 6);
-
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-
 }
 
 class FindAndReplaceModal extends Modal {
+	settings: RfrPluginSettings;
+	editor: Editor;
+	plugin: Plugin;
+
 	constructor(app: App, editor: Editor, settings: RfrPluginSettings, plugin: Plugin) {
 		super(app);
 		this.editor = editor;
 		this.settings = settings;
 		this.plugin = plugin;
 	}
-
-	settings: RfrPluginSettings;
-	editor: Editor;
-	plugin: Plugin;
 
 	onOpen() {
 		const { contentEl, titleEl, editor, modalEl } = this;
@@ -103,7 +102,7 @@ class FindAndReplaceModal extends Modal {
 
 		logger('No text selected?: ' + noSelection, 9);
 
-		const addTextComponent = (label: string, placeholder: string, postfix=''): [TextComponent, HTMLDivElement] => {
+		const addTextComponent = (label: string, placeholder: string, postfix = ''): [TextComponent, HTMLDivElement] => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
 
@@ -132,47 +131,53 @@ class FindAndReplaceModal extends Modal {
 		const addToggleComponent = (label: string, tooltip: string, hide = false): ToggleComponent => {
 			const containerEl = document.createElement(divClass);
 			containerEl.addClass(rowClass);
-	
+
 			const targetEl = document.createElement(divClass);
 			targetEl.addClass(rowClass);
 
 			const component = new ToggleComponent(targetEl);
-			component.setTooltip(tooltip);
-	
+
 			const labelEl = document.createElement(divClass);
 			labelEl.addClass('check-label');
 			labelEl.setText(label);
-	
+
+			if (tooltip) {
+				containerEl.setAttribute('title', tooltip);
+				labelEl.setAttribute('title', tooltip);
+				targetEl.setAttribute('title', tooltip);
+			}
+
 			containerEl.appendChild(labelEl);
 			containerEl.appendChild(targetEl);
 			if (!hide) contentEl.appendChild(containerEl);
 			return component;
 		};
 
-		// Create input fields
 		const findRow = addTextComponent('Find:', 'e.g. (.*)', '/' + regexFlags);
 		const findInputComponent = findRow[0];
 		const findRegexFlags = findRow[1];
 		const replaceRow = addTextComponent('Replace:', 'e.g. $1', this.settings.processLineBreak ? '\\n=LF' : '');
 		const replaceWithInputComponent = replaceRow[0];
 
-		// Create and show regular expression toggle switch
-		const regToggleComponent = addToggleComponent('Use regular expressions', 'If enabled, regular expressions in the find field are processed as such, and regex groups might be addressed in the replace field');
-		
-		// Update regex-flags label if regular expressions are enabled or disabled
-		regToggleComponent.onChange( regNew => {
+		const regToggleComponent = addToggleComponent(
+			'Use regular expressions',
+			'If enabled, regular expressions in the find field are processed as such, and regex groups might be addressed in the replace field',
+		);
+
+		regToggleComponent.onChange((regNew) => {
 			if (regNew) {
 				findRegexFlags.setText('/' + regexFlags);
-			}
-			else {
+			} else {
 				findRegexFlags.setText('');
 			}
-		})
+		});
 
-		// Create and show selection toggle switch only if any text is selected
-		const selToggleComponent = addToggleComponent('Replace only in selection', 'If enabled, replaces only occurances in the currently selected text', noSelection);
+		const selToggleComponent = addToggleComponent(
+			'Replace only in selection',
+			'If enabled, replaces only occurances in the currently selected text',
+			noSelection,
+		);
 
-		// Create Buttons
 		const buttonContainerEl = document.createElement(divClass);
 		buttonContainerEl.addClass(rowClass);
 
@@ -186,7 +191,7 @@ class FindAndReplaceModal extends Modal {
 
 		const submitButtonComponent = new ButtonComponent(submitButtonTarget);
 		const cancelButtonComponent = new ButtonComponent(cancelButtonTarget);
-		
+
 		cancelButtonComponent.setButtonText('Cancel');
 		cancelButtonComponent.onClick(() => {
 			logger('Action cancelled.', 8);
@@ -207,7 +212,6 @@ class FindAndReplaceModal extends Modal {
 				return;
 			}
 
-			// Replace line breaks in find-field if option is enabled
 			if (this.settings.processLineBreak) {
 				logger('Replacing linebreaks in replace-field', 9);
 				logger('  old: ' + replaceString, 9);
@@ -215,7 +219,6 @@ class FindAndReplaceModal extends Modal {
 				logger('  new: ' + replaceString, 9);
 			}
 
-			// Replace line breaks in find-field if option is enabled
 			if (this.settings.processTab) {
 				logger('Replacing tabs in replace-field', 9);
 				logger('  old: ' + replaceString, 9);
@@ -223,51 +226,55 @@ class FindAndReplaceModal extends Modal {
 				logger('  new: ' + replaceString, 9);
 			}
 
-			// Check if regular expressions should be used
-			if(regToggleComponent.getValue()) {
+			if (regToggleComponent.getValue()) {
 				logger('USING regex with flags: ' + regexFlags, 8);
+				let searchRegex: RegExp;
 
-				const searchRegex = new RegExp(searchString, regexFlags);
-				if(!selToggleComponent.getValue()) {
+				try {
+					searchRegex = new RegExp(searchString, regexFlags);
+				} catch (error) {
+					const message = error instanceof Error ? error.message : 'Unknown regex error';
+					logger('Invalid regex: ' + message, 0);
+					new Notice(`Invalid regular expression: ${message}`);
+					return;
+				}
+
+				if (!selToggleComponent.getValue()) {
 					logger('   SCOPE: Full document', 9);
 					const documentText = editor.getValue();
 					const rresult = documentText.match(searchRegex);
 					if (rresult) {
 						editor.setValue(documentText.replace(searchRegex, replaceString));
-						resultString = `Made ${rresult.length} replacement(s) in document`;			
+						resultString = `Made ${rresult.length} replacement(s) in document`;
 					}
-				}
-				else {
+				} else {
 					logger('   SCOPE: Selection', 9);
 					const rresult = selectedText.match(searchRegex);
 					if (rresult) {
-						editor.replaceSelection(selectedText.replace(searchRegex, replaceString));	
+						editor.replaceSelection(selectedText.replace(searchRegex, replaceString));
 						resultString = `Made ${rresult.length} replacement(s) in selection`;
 					}
 				}
-			}
-			else {
+			} else {
 				logger('NOT using regex', 8);
 				let nrOfHits = 0;
-				if(!selToggleComponent.getValue()) {
+				if (!selToggleComponent.getValue()) {
 					logger('   SCOPE: Full document', 9);
-					scope = 'selection'
+					scope = 'document';
 					const documentText = editor.getValue();
 					const documentSplit = documentText.split(searchString);
 					nrOfHits = documentSplit.length - 1;
 					editor.setValue(documentSplit.join(replaceString));
-				}
-				else {
+				} else {
 					logger('   SCOPE: Selection', 9);
-					scope = 'document';
+					scope = 'selection';
 					const selectedSplit = selectedText.split(searchString);
 					nrOfHits = selectedSplit.length - 1;
 					editor.replaceSelection(selectedSplit.join(replaceString));
 				}
 				resultString = `Made ${nrOfHits} replacement(s) in ${scope}`;
-			} 		
-			
-			// Saving settings (find/replace text and toggle switch states)
+			}
+
 			this.settings.findText = searchString;
 			this.settings.replaceText = replaceString;
 			this.settings.useRegEx = regToggleComponent.getValue();
@@ -275,34 +282,29 @@ class FindAndReplaceModal extends Modal {
 			this.plugin.saveData(this.settings);
 
 			this.close();
-			new Notice(resultString);					
+			new Notice(resultString);
 		});
 
-		// Apply settings
 		regToggleComponent.setValue(this.settings.useRegEx);
 		selToggleComponent.setValue(this.settings.selOnly);
 		replaceWithInputComponent.setValue(this.settings.replaceText);
-		
-		// Check if the prefill find option is enabled and the selection does not contain linebreaks
+
 		if (this.settings.prefillFind && editor.getSelection().indexOf('\n') < 0 && !noSelection) {
-			logger('Found selection without linebreaks and option is enabled -> fill',9);
+			logger('Found selection without linebreaks and option is enabled -> fill', 9);
 			findInputComponent.setValue(editor.getSelection());
 			selToggleComponent.setValue(false);
-		}
-		else {
+		} else {
 			logger('Restore find text', 9);
 			findInputComponent.setValue(this.settings.findText);
 		}
-		
-		// Add button row to dialog
+
 		buttonContainerEl.appendChild(submitButtonTarget);
 		buttonContainerEl.appendChild(cancelButtonTarget);
 		contentEl.appendChild(buttonContainerEl);
 
-		// If no text is selected, disable selection-toggle-switch
 		if (noSelection) selToggleComponent.setValue(false);
 	}
-	
+
 	onClose() {
 		const { contentEl } = this;
 		contentEl.empty();
@@ -318,46 +320,44 @@ class RegexFindReplaceSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
-		const {containerEl} = this;
+		const { containerEl } = this;
 		containerEl.empty();
 
-		containerEl.createEl('h4', {text: 'Regular Expression Settings'});
+		containerEl.createEl('h4', { text: 'Regular Expression Settings' });
 
 		new Setting(containerEl)
 			.setName('Case Insensitive')
-			.setDesc('When using regular expressions, apply the \'/i\' modifier for case insensitive search)')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.caseInsensitive)
-				.onChange(async (value) => {
+			.setDesc("When using regular expressions, apply the '/i' modifier for case insensitive search)")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.caseInsensitive).onChange(async (value) => {
 					logger('Settings update: caseInsensitive: ' + value);
 					this.plugin.settings.caseInsensitive = value;
 					await this.plugin.saveSettings();
-				}));
+				}),
+			);
 
-		containerEl.createEl('h4', {text: 'General Settings'});
-
+		containerEl.createEl('h4', { text: 'General Settings' });
 
 		new Setting(containerEl)
 			.setName('Process \\n as line break')
-			.setDesc('When \'\\n\' is used in the replace field, a \'line break\' will be inserted accordingly')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.processLineBreak)
-				.onChange(async (value) => {
+			.setDesc("When '\\n' is used in the replace field, a 'line break' will be inserted accordingly")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.processLineBreak).onChange(async (value) => {
 					logger('Settings update: processLineBreak: ' + value);
 					this.plugin.settings.processLineBreak = value;
 					await this.plugin.saveSettings();
-				}));
-
+				}),
+			);
 
 		new Setting(containerEl)
 			.setName('Prefill Find Field')
-			.setDesc('Copy the currently selected text (if any) into the \'Find\' text field. This setting is only applied if the selection does not contain linebreaks')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.prefillFind)
-				.onChange(async (value) => {
+			.setDesc("Copy the currently selected text (if any) into the 'Find' text field. This setting is only applied if the selection does not contain linebreaks")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.prefillFind).onChange(async (value) => {
 					logger('Settings update: prefillFind: ' + value);
 					this.plugin.settings.prefillFind = value;
 					await this.plugin.saveSettings();
-				}));
+				}),
+			);
 	}
 }
